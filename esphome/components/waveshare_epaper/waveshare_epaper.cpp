@@ -1261,6 +1261,8 @@ void WaveshareEPaper5P8InV2::dump_config() {
 }
 
 void WaveshareEPaper7P5InBV2::initialize() {
+  this->reset_();
+
   // COMMAND POWER SETTING
   this->command(0x01);
   this->data(0x07);
@@ -1294,6 +1296,8 @@ void WaveshareEPaper7P5InBV2::initialize() {
   this->data(0x00);  // 800*480
   this->data(0x00);
   this->data(0x00);
+
+  this->wait_until_idle_();
 }
 void HOT WaveshareEPaper7P5InBV2::display() {
   // COMMAND DATA START TRANSMISSION 1 (B/W data)
