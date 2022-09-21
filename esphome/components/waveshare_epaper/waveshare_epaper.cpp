@@ -1353,30 +1353,32 @@ void WaveshareEPaper7P5InBV3::initialize() {
 
   // COMMAND POWER SETTING
   this->command(0x01);
+  this->data(0x17);  // BD_EN=1 (00b: VCOM 01b: VBH(VCOM-VDL) 10b:VBL(VCOM-VDH) 11b: VDHR)
+  this->data(0x17);  // VCOM_SLEW=1 VGH=20V VGL=-20V
+  this->data(0x3F);  // VDH=15.0V
+  this->data(0x3F);  // VDL=-15.0V
+  this->data(0x11);  // VDHR=5.8V
 
-  // 1-0=11: internal power
-  this->data(0x07);
-  this->data(0x17);  // VGH&VGL
-  this->data(0x3F);  // VSH
-  this->data(0x26);  // VSL
-  this->data(0x11);  // VSHR
-
-  // VCOM DC Setting
+  // COMMAND VCOM DC SETTING
   this->command(0x82);
-  this->data(0x24);  // VCOM
+  this->data(0x24);  // VDCS=-1.90V
 
-  // Booster Setting
+  // COMMAND BOOSTER SETTING
   this->command(0x06);
-  this->data(0x27);
-  this->data(0x27);
-  this->data(0x2F);
-  this->data(0x17);
+  this->data(0x27); // BT_PHA -- Start=10mS Drive=5 Off=3.34uS
+  this->data(0x27); // BT_PHB -- Start=10mS Drive=5 Off=3.34uS
+  this->data(0x2F); // BT_PHC1 -- Drive=6 Off=3.34uS
+  this->data(0x17); // BT_PHC2 -- Drive=3 Off=3.34uS
 
-  // POWER ON
+  // COMMAND PLL CLOCK FREQUENCY SETTING
+  this->command(0x30);
+  this->data(0x06);  // FRS=50Hz
+
+  // COMMAND POWER ON
   this->command(0x04);
-
   delay(100);  // NOLINT
   this->wait_until_idle_();
+  
   // COMMAND PANEL SETTING
   this->command(0x00);
   this->data(0x3F);  // KW-3f   KWR-2F BWROTP 0f BWOTP 1f
@@ -1387,17 +1389,21 @@ void WaveshareEPaper7P5InBV3::initialize() {
   this->data(0x20);
   this->data(0x01);  // gate 480
   this->data(0xE0);
+  
   // COMMAND ...?
   this->command(0x15);
   this->data(0x00);
+
   // COMMAND VCOM AND DATA INTERVAL SETTING
   this->command(0x50);
   this->data(0x10);
-  this->data(0x00);
+  this->data(0x07);
+  
   // COMMAND TCON SETTING
   this->command(0x60);
   this->data(0x22);
-  // Resolution setting
+  
+  // COMMAND GSST SETTING
   this->command(0x65);
   this->data(0x00);
   this->data(0x00);  // 800*480
@@ -1436,38 +1442,43 @@ void WaveshareEPaper7P5InBV3::initialize() {
   for (count = 0; count < 42; count++)
     this->data(lut_vcom_7_i_n5_v2[count]);
 
-  this->command(0x21);  // LUTBW
+  this->command(0x21);  // LUTWW
   for (count = 0; count < 42; count++)
     this->data(lut_ww_7_i_n5_v2[count]);
 
-  this->command(0x22);  // LUTBW
+  this->command(0x22);  // LUTKW / LUTR
   for (count = 0; count < 42; count++)
     this->data(lut_bw_7_i_n5_v2[count]);
 
-  this->command(0x23);  // LUTWB
+  this->command(0x23);  // LUTWK / LUTW
   for (count = 0; count < 42; count++)
     this->data(lut_wb_7_i_n5_v2[count]);
 
-  this->command(0x24);  // LUTBB
+  this->command(0x24);  // LUTKK / LUTK
   for (count = 0; count < 42; count++)
     this->data(lut_bb_7_i_n5_v2[count]);
-
-  this->command(0x10);
-  for (uint32_t i = 0; i < 800 * 480 / 8; i++) {
-    this->data(0xFF);
-  }
-};
+}
 void HOT WaveshareEPaper7P5InBV3::display() {
-  uint32_t buf_len = this->get_buffer_length_();
-
-  this->command(0x13);  // Start Transmission
+  // COMMAND DATA START TRANSMISSION 1 (B/W data)
+  this->command(0x10);
   delay(2);
-  for (uint32_t i = 0; i < buf_len; i++) {
-    this->data(~(this->buffer_[i]));
-  }
+  this->start_data_();
+  this->write_array(this->buffer_, this->get_buffer_length_());
+  this->end_data_();
+  delay(2);
 
-  this->command(0x12);  // Display Refresh
-  delay(100);           // NOLINT
+  // COMMAND DATA START TRANSMISSION 2 (RED data)
+  this->command(0x13);
+  delay(2);
+  this->start_data_();
+  for (size_t i = 0; i < this->get_buffer_length_(); i++)
+    this->write_byte(0x00);
+  this->end_data_();
+  delay(2);
+
+  // COMMAND DISPLAY REFRESH
+  this->command(0x12);
+  delay(100);  // NOLINT
   this->wait_until_idle_();
 }
 int WaveshareEPaper7P5InBV3::get_width_internal() { return 800; }
