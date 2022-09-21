@@ -1490,39 +1490,6 @@ void WaveshareEPaper7P5InBV3::dump_config() {
   LOG_PIN("  Busy Pin: ", this->busy_pin_);
   LOG_UPDATE_INTERVAL(this);
 }
-
-void HOT WaveshareEPaper7P5InBV3::display() {
-  // COMMAND DATA START TRANSMISSION 1
-  this->command(0x10);
-  this->start_data_();
-  for (size_t i = 0; i < this->get_buffer_length_(); i++) {
-    uint8_t temp1 = this->buffer_[i];
-    for (uint8_t j = 0; j < 8; j++) {
-      uint8_t temp2;
-      if (temp1 & 0x80) {
-        temp2 = 0x03;
-      } else {
-        temp2 = 0x00;
-      }
-      temp2 <<= 4;
-      temp1 <<= 1;
-      j++;
-      if (temp1 & 0x80) {
-        temp2 |= 0x03;
-      } else {
-        temp2 |= 0x00;
-      }
-      temp1 <<= 1;
-      this->write_byte(temp2);
-    }
-    App.feed_wdt();
-  }
-  this->end_data_();
-  
-  // COMMAND DISPLAY REFRESH
-  this->command(0x12);
-}
-
 void WaveshareEPaper7P5In::initialize() {
   // COMMAND POWER SETTING
   this->command(0x01);
