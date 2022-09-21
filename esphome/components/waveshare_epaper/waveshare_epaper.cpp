@@ -130,9 +130,17 @@ void WaveshareEPaper::update() {
 }
 void WaveshareEPaper::fill(Color color) {
   // flip logic
-  const uint8_t fill = color.is_on() ? 0x00 : 0xFF;
-  for (uint32_t i = 0; i < this->get_buffer_length_(); i++)
-    this->buffer_[i] = fill;
+  uint8_t fill = 0x00;
+  const uint8_t color332 = display::ColorUtil::color_to_332(color);
+
+  for(uint8_t indexColor = 0; indexColor < this->get_color_internal(); indexColor++) {
+    // flip logic
+    uint32_t startPosColor = ((this->get_width_internal() * this->get_height_internal() / 8u) * indexColor);
+    uint32_t endPosColor = ((this->get_width_internal() * this->get_height_internal() / 8u) * (indexColor + 1));
+    fill =  (color332 == this->get_color_list_internal(indexColor)) ? 0x00 : 0xFF;
+    for (uint32_t i = startPosColor; i < endPosColor; i++)
+      this->buffer_[i] = fill;
+  }
 }
 void HOT WaveshareEPaper::draw_absolute_pixel_internal(int x, int y, Color color) {
   if (x >= this->get_width_internal() || y >= this->get_height_internal() || x < 0 || y < 0)
@@ -140,16 +148,18 @@ void HOT WaveshareEPaper::draw_absolute_pixel_internal(int x, int y, Color color
 
   const uint32_t pos = (x + y * this->get_width_controller()) / 8u;
   const uint8_t subpos = x & 0x07;
-  // flip logic
-  if (!color.is_on()) {
-    this->buffer_[pos] |= 0x80 >> subpos;
-  } else {
-    this->buffer_[pos] &= ~(0x80 >> subpos);
+  const uint8_t color332 = display::ColorUtil::color_to_332(color);
+  
+  for(uint8_t indexColor = 0; indexColor < this->get_color_internal(); indexColor++) {
+    // flip logic
+    uint32_t posColor = ((this->get_width_internal() * this->get_height_internal() / 8u) * indexColor) + pos;
+    this->buffer_[posColor] &= ~(0x80 >> subpos);
+    if (color332 != this->get_color_list_internal(indexColor)) {
+      this->buffer_[posColor] |= (0x80 >> subpos);
+    }
   }
 }
-uint32_t WaveshareEPaper::get_buffer_length_() {
-  return this->get_width_controller() * this->get_height_internal() / 8u;
-}
+uint32_t WaveshareEPaper::get_buffer_length_() { return this->get_width_internal() * this->get_height_internal() * this->get_color_internal() / 8u; }
 void WaveshareEPaper::start_command_() {
   this->dc_pin_->digital_write(false);
   this->enable();
@@ -1027,10 +1037,7 @@ void WaveshareEPaper4P2In::dump_config() {
 }
 
 // ========================================================
-//               4.20in Type B (LUT from OTP)
-// Datasheet:
-//  - https://www.waveshare.com/w/upload/2/20/4.2inch-e-paper-module-user-manual-en.pdf
-//  - https://github.com/waveshare/e-Paper/blob/master/RaspberryPi_JetsonNano/c/lib/e-Paper/EPD_4in2b_V2.c
+//               4.20in B/W/R Type B (LUT from OTP)
 // ========================================================
 void WaveshareEPaper4P2InBV2::initialize() {
   // these exact timings are required for a proper reset/init
@@ -1049,17 +1056,18 @@ void WaveshareEPaper4P2InBV2::initialize() {
 }
 
 void HOT WaveshareEPaper4P2InBV2::display() {
+  const uint32_t buffer_length = this->get_buffer_length_() / this->get_color_internal();
+
   // COMMAND DATA START TRANSMISSION 1 (B/W data)
   this->command(0x10);
   this->start_data_();
-  this->write_array(this->buffer_, this->get_buffer_length_());
+  this->write_array(this->buffer_, buffer_length);
   this->end_data_();
 
   // COMMAND DATA START TRANSMISSION 2 (RED data)
   this->command(0x13);
   this->start_data_();
-  for (size_t i = 0; i < this->get_buffer_length_(); i++)
-    this->write_byte(0xFF);
+  this->write_array((this->buffer_ + buffer_length), buffer_length);
   this->end_data_();
   delay(2);
 
@@ -1262,7 +1270,7 @@ void WaveshareEPaper5P8InV2::dump_config() {
 
 void WaveshareEPaper7P5InBV2::initialize() {
   this->reset_();
-
+  
   // COMMAND POWER SETTING
   this->command(0x01);
   this->data(0x07);
@@ -1276,16 +1284,18 @@ void WaveshareEPaper7P5InBV2::initialize() {
   // COMMAND PANEL SETTING
   this->command(0x00);
   this->data(0x0F);     // KW3f, KWR-2F, BWROTP 0f, BWOTP 1f
+  // COMMAND RESOLUTION SETTING
   this->command(0x61);  // tres
   this->data(0x03);     // 800px
   this->data(0x20);
   this->data(0x01);  // 400px
   this->data(0xE0);
+  // COMMAND DUAL SPI MODE
   this->command(0x15);
   this->data(0x00);
   // COMMAND VCOM AND DATA INTERVAL SETTING
   this->command(0x50);
-  this->data(0x11);
+  this->data(0x10); // BDX=0 BDV=LUTW N2OCP=0 DDX=LUTW
   this->data(0x07);
   // COMMAND TCON SETTING
   this->command(0x60);
@@ -1298,11 +1308,14 @@ void WaveshareEPaper7P5InBV2::initialize() {
   this->data(0x00);
 }
 void HOT WaveshareEPaper7P5InBV2::display() {
+  const size_t buffer_length = this->get_buffer_length_() / this->get_color_internal();
   // COMMAND DATA START TRANSMISSION 1 (B/W data)
   this->command(0x10);
   delay(2);
   this->start_data_();
   this->write_array(this->buffer_, this->get_buffer_length_());
+  for (size_t i = 0; i < buffer_length; i++)
+    this->write_byte(~this->buffer_[i]);
   this->end_data_();
   delay(2);
 
@@ -1310,8 +1323,8 @@ void HOT WaveshareEPaper7P5InBV2::display() {
   this->command(0x13);
   delay(2);
   this->start_data_();
-  for (size_t i = 0; i < this->get_buffer_length_(); i++)
-    this->write_byte(0x00);
+  for (size_t i = buffer_length; i < this->get_buffer_length_(); i++)
+    this->write_byte(~this->buffer_[i]);
   this->end_data_();
   delay(2);
 
