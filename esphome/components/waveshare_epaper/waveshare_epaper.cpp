@@ -1384,7 +1384,7 @@ void WaveshareEPaper7P5InBV3::initialize() {
   
   // COMMAND PANEL SETTING
   this->command(0x00);
-  this->data(0x3F);  // KW-3f   KWR-2F BWROTP 0f BWOTP 1f
+  this->data(0x0F);  // 0000 1111 // REG=0 KWR=0(B/W/R) UD=1 SHL=1 SHD_N=1 RST_N=1
 
   // COMMAND RESOLUTION SETTING
   this->command(0x61);
@@ -1398,7 +1398,7 @@ void WaveshareEPaper7P5InBV3::initialize() {
   // COMMAND VCOM AND DATA INTERVAL SETTING
   this->command(0x50);
   this->data(0x10);
-  this->data(0x00);
+  this->data(0x07); // CDI=10 (VCOM and Data Interval)
   // COMMAND TCON SETTING
   this->command(0x60);
   this->data(0x22);
