@@ -1370,15 +1370,15 @@ bool WaveshareEPaper7P5InBV3::wait_until_idle_() {
 
   const uint32_t start = millis();
   while (this->busy_pin_->digital_read()) {
-    this->command(0x71);
     if (millis() - start > this->idle_timeout_()) {
-      ESP_LOGE(TAG, "Timeout while displaying image!");
+      ESP_LOGE(TAG, "Timeout while waiting for idle after %d ms", millis() - start);
       return false;
     }
     App.feed_wdt();
     yield();
     delay(10);
   }
+  ESP_LOGD(TAG, "Busy state ended after %d ms", millis() - start);
   App.feed_wdt();
   yield();
   delay(200);  // NOLINT
