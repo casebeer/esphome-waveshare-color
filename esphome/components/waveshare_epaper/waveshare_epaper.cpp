@@ -1269,6 +1269,7 @@ void WaveshareEPaper5P8InV2::dump_config() {
 }
 
 void WaveshareEPaper7P5InBV2::initialize() {
+  ESP_LOGD(TAG, "Initializing 7P5InBV2");
   this->reset_();
   
   // COMMAND POWER SETTING
@@ -1280,6 +1281,8 @@ void WaveshareEPaper7P5InBV2::initialize() {
   // COMMAND POWER ON
   this->command(0x04);
   delay(100);  // NOLINT
+
+  ESP_LOGD(TAG, "Waiting until idle...");
   this->wait_until_idle_();
   // COMMAND PANEL SETTING
   this->command(0x00);
@@ -1306,9 +1309,12 @@ void WaveshareEPaper7P5InBV2::initialize() {
   this->data(0x00);  // 800*480
   this->data(0x00);
   this->data(0x00);
+  ESP_LOGD(TAG, "Init done.");
 }
 void HOT WaveshareEPaper7P5InBV2::display() {
+  ESP_LOGD(TAG, "Starting 7P5InBV2::display()");
   const size_t buffer_length = this->get_buffer_length_() / this->get_color_internal();
+  ESP_LOGD(TAG, "Starting BLACK data...");
   // COMMAND DATA START TRANSMISSION 1 (B/W data)
   this->command(0x10);
   delay(2);
@@ -1319,6 +1325,7 @@ void HOT WaveshareEPaper7P5InBV2::display() {
   this->end_data_();
   delay(2);
 
+  ESP_LOGD(TAG, "Starting RED data...");
   // COMMAND DATA START TRANSMISSION 2 (RED data)
   this->command(0x13);
   delay(2);
@@ -1328,10 +1335,13 @@ void HOT WaveshareEPaper7P5InBV2::display() {
   this->end_data_();
   delay(2);
 
+  ESP_LOGD(TAG, "Refreshing display...");
   // COMMAND DISPLAY REFRESH
   this->command(0x12);
   delay(100);  // NOLINT
+  ESP_LOGD(TAG, "Waiting until idle...");
   this->wait_until_idle_();
+  ESP_LOGD(TAG, "display() done");
 }
 int WaveshareEPaper7P5InBV2::get_width_internal() { return 800; }
 int WaveshareEPaper7P5InBV2::get_height_internal() { return 480; }
@@ -1362,6 +1372,7 @@ bool WaveshareEPaper7P5InBV3::wait_until_idle_() {
   return true;
 };
 void WaveshareEPaper7P5InBV3::initialize() {
+  ESP_LOGD(TAG, "Initializing 7P5InBV3");
   this->reset_();
 
   // COMMAND POWER SETTING
@@ -1423,6 +1434,8 @@ void WaveshareEPaper7P5InBV3::initialize() {
   this->data(0x00);
   this->data(0x00);
 
+  ESP_LOGD(TAG, "Waiting until idle...");
+
   this->wait_until_idle_();
 
   uint8_t lut_vcom_7_i_n5_v2[] = {
@@ -1470,9 +1483,12 @@ void WaveshareEPaper7P5InBV3::initialize() {
   this->command(0x24);  // LUTKK / LUTK
   for (count = 0; count < 42; count++)
     this->data(lut_bb_7_i_n5_v2[count]);
+
+  ESP_LOGD(TAG, "Init done.");
 }
 void HOT WaveshareEPaper7P5InBV3::display() {
   // COMMAND DATA START TRANSMISSION 1 (B/W data)
+  ESP_LOGD(TAG, "Starting 7P5InBV3::display()");
   this->command(0x10);
   delay(2);
   this->start_data_();
