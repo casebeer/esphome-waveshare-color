@@ -1375,8 +1375,12 @@ bool WaveshareEPaper7P5InBV3::wait_until_idle_() {
       ESP_LOGI(TAG, "Timeout while displaying image!");
       return false;
     }
+    App.feed_wdt();
+    yield();
     delay(10);
   }
+  App.feed_wdt();
+  yield();
   delay(200);  // NOLINT
   return true;
 };
@@ -1502,7 +1506,9 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   delay(2);
   this->start_data_();
   this->write_array(this->buffer_, this->get_buffer_length_());
-  this->end_data_();
+  this->end_data_();  
+  App.feed_wdt();
+  yield();
   delay(2);
 
   // COMMAND DATA START TRANSMISSION 2 (RED data)
@@ -1512,6 +1518,8 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   for (size_t i = 0; i < this->get_buffer_length_(); i++)
     this->write_byte(0x00);
   this->end_data_();
+  App.feed_wdt();
+  yield();
   delay(2);
 
   // COMMAND DISPLAY REFRESH
