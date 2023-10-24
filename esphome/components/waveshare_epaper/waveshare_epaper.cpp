@@ -1411,10 +1411,10 @@ void WaveshareEPaper7P5InBV3::initialize() {
   this->command(0x30);
   this->data(0x06);  // FRS=50Hz
 
-  // COMMAND POWER ON
-  this->command(0x04);
-  delay(100);  // NOLINT
-  this->wait_until_idle_();
+//  // COMMAND POWER ON
+//  this->command(0x04);
+//  delay(100);  // NOLINT
+//  this->wait_until_idle_();
   
   // COMMAND PANEL SETTING
   this->command(0x00);
@@ -1503,6 +1503,12 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   ESP_LOGD(TAG, "Starting 7P5InBV3::display()");
   const size_t buffer_length = this->get_buffer_length_() / this->get_color_internal();
 
+  ESP_LOGD(TAG, "Powering on display driver...");
+  // COMMAND POWER ON
+  this->command(0x04);
+  delay(100);  // NOLINT
+  this->wait_until_idle_();
+
   // COMMAND DATA START TRANSMISSION 1 (B/W data)
   this->command(0x10);
   delay(2);
@@ -1536,6 +1542,9 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   delay(100);  // NOLINT
   ESP_LOGD(TAG, "Waiting until idle...");
   this->wait_until_idle_();
+
+  ESP_LOGD(TAG, "Powering off display driver and entering deep sleep...");
+  this->deep_sleep();
   ESP_LOGD(TAG, "display() done");
 }
 int WaveshareEPaper7P5InBV3::get_width_internal() { return 800; }
