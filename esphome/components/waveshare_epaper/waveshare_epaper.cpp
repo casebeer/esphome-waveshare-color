@@ -1500,13 +1500,17 @@ void WaveshareEPaper7P5InBV3::initialize() {
   ESP_LOGD(TAG, "Init done.");
 }
 void HOT WaveshareEPaper7P5InBV3::display() {
-  // COMMAND DATA START TRANSMISSION 1 (B/W data)
   ESP_LOGD(TAG, "Starting 7P5InBV3::display()");
+  const size_t buffer_length = this->get_buffer_length_() / this->get_color_internal();
+
+  // COMMAND DATA START TRANSMISSION 1 (B/W data)
   this->command(0x10);
   delay(2);
   ESP_LOGD(TAG, "Sending BLACK data");
   this->start_data_();
   this->write_array(this->buffer_, this->get_buffer_length_());
+  for (size_t i = 0; i < buffer_length; i++)
+    this->write_byte(~this->buffer_[i]);
   this->end_data_();  
   App.feed_wdt();
   yield();
@@ -1517,8 +1521,8 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   delay(2);
   ESP_LOGD(TAG, "Sending RED data");
   this->start_data_();
-  for (size_t i = 0; i < this->get_buffer_length_(); i++)
-    this->write_byte(0x00);
+  for (size_t i = buffer_length; i < this->get_buffer_length_(); i++)
+    this->write_byte(~this->buffer_[i]);
   this->end_data_();
   App.feed_wdt();
   yield();
@@ -1527,6 +1531,8 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   ESP_LOGD(TAG, "Refreshing display");
   // COMMAND DISPLAY REFRESH
   this->command(0x12);
+  App.feed_wdt();
+  yield();
   delay(100);  // NOLINT
   ESP_LOGD(TAG, "Waiting until idle...");
   this->wait_until_idle_();

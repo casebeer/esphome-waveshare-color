@@ -474,6 +474,15 @@ class WaveshareEPaper7P5InBV3 : public WaveshareEPaper {
     this->data(0xA5);
   }
 
+  int get_color_internal() override { return 2; }
+
+  uint8_t get_color_list_internal(uint8_t indexColor) override {
+    if(indexColor == 1) return display::ColorUtil::color_to_332(Color(255, 0, 0, 0));
+    return display::ColorUtil::color_to_332(display::COLOR_ON);
+  }
+  
+  display::DisplayType get_display_type() override { return display::DisplayType::DISPLAY_TYPE_COLOR; }
+
  protected:
   int get_width_internal() override;
 
