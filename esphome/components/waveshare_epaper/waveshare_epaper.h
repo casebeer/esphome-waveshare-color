@@ -493,6 +493,8 @@ class WaveshareEPaper7P5InBV3 : public WaveshareEPaper {
   display::DisplayType get_display_type() override { return display::DisplayType::DISPLAY_TYPE_COLOR; }
 
  protected:
+  int init_();
+
   int get_width_internal() override;
 
   int get_height_internal() override;

@@ -1385,6 +1385,10 @@ bool WaveshareEPaper7P5InBV3::wait_until_idle_() {
   return true;
 };
 void WaveshareEPaper7P5InBV3::initialize() {
+  this->init_();
+}
+void WaveshareEPaper7P5InBV3::init_() {
+  const uint32_t start = millis();
   ESP_LOGD(TAG, "Initializing 7P5InBV3");
   this->reset_();
 
@@ -1497,39 +1501,46 @@ void WaveshareEPaper7P5InBV3::initialize() {
   for (count = 0; count < 42; count++)
     this->data(lut_bb_7_i_n5_v2[count]);
 
-  ESP_LOGD(TAG, "Init done.");
+  ESP_LOGD(TAG, "Init done in %d ms", millis() - start);
 }
 void HOT WaveshareEPaper7P5InBV3::display() {
+  const uint32_t start = millis();
+  uint32_t section_start;
+
   ESP_LOGD(TAG, "Starting 7P5InBV3::display()");
   const size_t buffer_length = this->get_buffer_length_() / this->get_color_internal();
 
   ESP_LOGD(TAG, "Powering on display driver...");
   // COMMAND POWER ON
   this->command(0x04);
-  delay(100);  // NOLINT
+  //delay(100);  // NOLINT
   this->wait_until_idle_();
 
   // COMMAND DATA START TRANSMISSION 1 (B/W data)
+  ESP_LOGD(TAG, "Sending BLACK data");
+  section_start = millis();
   this->command(0x10);
   delay(2);
-  ESP_LOGD(TAG, "Sending BLACK data");
   this->start_data_();
   this->write_array(this->buffer_, this->get_buffer_length_());
   for (size_t i = 0; i < buffer_length; i++)
     this->write_byte(~this->buffer_[i]);
   this->end_data_();  
+  ESP_LOGD(TAG, "Sent BLACK data in %d ms", millis() - section_start);
   App.feed_wdt();
   yield();
   delay(2);
 
   // COMMAND DATA START TRANSMISSION 2 (RED data)
+  ESP_LOGD(TAG, "Sending RED data");
+  section_start = millis();
   this->command(0x13);
   delay(2);
-  ESP_LOGD(TAG, "Sending RED data");
   this->start_data_();
   for (size_t i = buffer_length; i < this->get_buffer_length_(); i++)
     this->write_byte(~this->buffer_[i]);
   this->end_data_();
+  ESP_LOGD(TAG, "Sent RED data in %d ms", millis() - section_start);
   App.feed_wdt();
   yield();
   delay(2);
@@ -1539,13 +1550,16 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   this->command(0x12);
   App.feed_wdt();
   yield();
-  delay(100);  // NOLINT
+  //delay(100);  // NOLINT
   ESP_LOGD(TAG, "Waiting until idle...");
   this->wait_until_idle_();
 
-  ESP_LOGD(TAG, "Powering off display driver and entering deep sleep...");
-  this->deep_sleep();
-  ESP_LOGD(TAG, "display() done");
+  //ESP_LOGD(TAG, "Powering off display driver and entering deep sleep...");
+  //this->deep_sleep();
+  ESP_LOGD(TAG, "Powering off display driver...");
+  this->command(0x02);
+  this->wait_until_idle_();
+  ESP_LOGD(TAG, "display() done in %d ms", millis() - start);
 }
 int WaveshareEPaper7P5InBV3::get_width_internal() { return 800; }
 int WaveshareEPaper7P5InBV3::get_height_internal() { return 480; }
