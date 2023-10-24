@@ -120,6 +120,8 @@ bool WaveshareEPaper::wait_until_idle_() {
       ESP_LOGE(TAG, "Timeout while displaying image!");
       return false;
     }
+    App.feed_wdt();
+    yield();
     delay(10);
   }
   return true;
@@ -1326,6 +1328,9 @@ void HOT WaveshareEPaper7P5InBV2::display() {
   delay(2);
 
   ESP_LOGD(TAG, "Starting RED data...");
+  App.feed_wdt();
+  yield();
+
   // COMMAND DATA START TRANSMISSION 2 (RED data)
   this->command(0x13);
   delay(2);
@@ -1336,8 +1341,12 @@ void HOT WaveshareEPaper7P5InBV2::display() {
   delay(2);
 
   ESP_LOGD(TAG, "Refreshing display...");
+  App.feed_wdt();
+  yield();
   // COMMAND DISPLAY REFRESH
   this->command(0x12);
+  App.feed_wdt();
+  yield();
   delay(100);  // NOLINT
   ESP_LOGD(TAG, "Waiting until idle...");
   this->wait_until_idle_();
