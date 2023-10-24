@@ -1372,7 +1372,7 @@ bool WaveshareEPaper7P5InBV3::wait_until_idle_() {
   while (this->busy_pin_->digital_read()) {
     this->command(0x71);
     if (millis() - start > this->idle_timeout_()) {
-      ESP_LOGI(TAG, "Timeout while displaying image!");
+      ESP_LOGE(TAG, "Timeout while displaying image!");
       return false;
     }
     App.feed_wdt();
@@ -1504,6 +1504,7 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   ESP_LOGD(TAG, "Starting 7P5InBV3::display()");
   this->command(0x10);
   delay(2);
+  ESP_LOGD(TAG, "Sending BLACK data");
   this->start_data_();
   this->write_array(this->buffer_, this->get_buffer_length_());
   this->end_data_();  
@@ -1514,6 +1515,7 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   // COMMAND DATA START TRANSMISSION 2 (RED data)
   this->command(0x13);
   delay(2);
+  ESP_LOGD(TAG, "Sending RED data");
   this->start_data_();
   for (size_t i = 0; i < this->get_buffer_length_(); i++)
     this->write_byte(0x00);
@@ -1522,10 +1524,13 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   yield();
   delay(2);
 
+  ESP_LOGD(TAG, "Refreshing display");
   // COMMAND DISPLAY REFRESH
   this->command(0x12);
   delay(100);  // NOLINT
+  ESP_LOGD(TAG, "Waiting until idle...");
   this->wait_until_idle_();
+  ESP_LOGD(TAG, "display() done");
 }
 int WaveshareEPaper7P5InBV3::get_width_internal() { return 800; }
 int WaveshareEPaper7P5InBV3::get_height_internal() { return 480; }
