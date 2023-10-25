@@ -1385,7 +1385,6 @@ bool WaveshareEPaper7P5InBV3::wait_until_idle_() {
   return true;
 };
 void WaveshareEPaper7P5InBV3::initialize() {
-  this->init_();
 }
 void WaveshareEPaper7P5InBV3::init_() {
   const uint32_t start = millis();
@@ -1510,6 +1509,9 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   ESP_LOGD(TAG, "Starting 7P5InBV3::display()");
   const size_t buffer_length = this->get_buffer_length_() / this->get_color_internal();
 
+  // Reset chipset
+  this->init_();
+
   ESP_LOGD(TAG, "Powering on display driver...");
   // COMMAND POWER ON
   this->command(0x04);
@@ -1554,10 +1556,10 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   ESP_LOGD(TAG, "Waiting until idle...");
   this->wait_until_idle_();
 
-  //ESP_LOGD(TAG, "Powering off display driver and entering deep sleep...");
-  //this->deep_sleep();
-  ESP_LOGD(TAG, "Powering off display driver...");
-  this->command(0x02);
+  ESP_LOGD(TAG, "Powering off display driver and entering deep sleep...");
+  this->deep_sleep();
+  //ESP_LOGD(TAG, "Powering off display driver...");
+  //this->command(0x02);
   this->wait_until_idle_();
   ESP_LOGD(TAG, "display() done in %d ms", millis() - start);
 }

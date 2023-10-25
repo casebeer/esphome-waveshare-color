@@ -499,7 +499,7 @@ class WaveshareEPaper7P5InBV3 : public WaveshareEPaper {
 
   int get_height_internal() override;
 
-  uint32_t idle_timeout_() override { return 30000; };
+  uint32_t idle_timeout_() override { return 60000; };
 
   void reset_() {
     if (this->reset_pin_ != nullptr) {
