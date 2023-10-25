@@ -479,7 +479,7 @@ class WaveshareEPaper7P5InBV3 : public WaveshareEPaper {
   void deep_sleep() override {
     this->command(0x02);  // Power off
     this->wait_until_idle_();
-    ESP_LOGD(TAG, "Entering deep sleep. busy_pin = %d...", this->busy_pin_->digital_read());
+    ESP_LOGD("waveshare_epaper", "Entering deep sleep. busy_pin = %d...", this->busy_pin_->digital_read());
     this->command(0x07);  // Deep sleep
     this->data(0xA5);
   }
