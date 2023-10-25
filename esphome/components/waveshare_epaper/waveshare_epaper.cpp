@@ -1560,6 +1560,7 @@ void HOT WaveshareEPaper7P5InBV3::display() {
   this->deep_sleep();
   //ESP_LOGD(TAG, "Powering off display driver...");
   //this->command(0x02);
+  ESP_LOGD(TAG, "Waiting until idle, busy_pin = %d...", this->busy_pin_->digital_read());
   this->wait_until_idle_();
   ESP_LOGD(TAG, "display() done in %d ms", millis() - start);
 }
